@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { WithState } from "@/components/StateViews";
-import { blobStorage } from "@/lib/blob-store";
+import { getBlobStorage } from "@/lib/blob-store";
 import { dispatch, newClientId } from "@/lib/store";
 import { SOURCE_TYPE_LABELS, SourceType } from "@/lib/types";
 
@@ -72,12 +72,12 @@ function NewSourceForm() {
       return;
     }
     setSaving(true);
-    const id = newClientId("src");
+    const id = newClientId();
     let fileMeta;
     if (file) {
-      const blobId = newClientId("file");
+      const blobId = newClientId();
       try {
-        await blobStorage.put(blobId, file);
+        await getBlobStorage().put("source", blobId, file, "application/pdf");
         fileMeta = { blobId, name: file.name, mimeType: file.type || "application/pdf", sizeBytes: file.size };
       } catch (err) {
         setSaving(false);

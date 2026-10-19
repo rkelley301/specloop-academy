@@ -36,7 +36,13 @@ export default function AboutPage() {
       </section>
 
       <section className="card" id="demo-mode">
-        <h2>Local demo mode</h2>
+        <h2>Where your data lives</h2>
+        <p>
+          <strong>Hosted mode</strong> (when this server is connected to Supabase): you sign in with an emailed link. Your
+          profile, progress, sources, drafts and files are stored in your account, and database and storage policies
+          limit each account to its own data.
+        </p>
+        <h3>Local demo mode</h3>
         <p>
           There&apos;s no sign-in. Your profile, progress, sources, drafts and audio are stored only in this
           browser&apos;s local storage and IndexedDB on this device. Anyone using this browser profile can see them, and

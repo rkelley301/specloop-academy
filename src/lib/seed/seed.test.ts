@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { MISSING_SCENARIO_ANSWER, buildSeedLessons, buildSeedPath } from "./ccst-level1";
-import generated from "./ccst-l1-seed.generated.json";
+import generated from "./ccst-l1-seed.generated.json" with { type: "json" };
 import { parseSeedLesson } from "./parse-seed-lesson";
 import { LessonSchema } from "../types";
 

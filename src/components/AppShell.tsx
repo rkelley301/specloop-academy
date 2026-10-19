@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { dueReviews, today } from "@/lib/selectors";
-import { useStore } from "@/lib/store";
+import { signOut, useStore } from "@/lib/store";
 import { IconAudio, IconInfo, IconLibrary, IconPath, IconReview, IconSettings, IconToday } from "./Icons";
 
 const PRIMARY = [
@@ -29,7 +29,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "/";
   const snap = useStore();
   const dueCount = snap.status === "ready" && snap.state.profile && snap.state.settings.notifications === "in_app" ? dueReviews(snap.state, today(snap.state)).length : 0;
-  const onboarding = pathname === "/welcome" || (snap.status === "ready" && !snap.state.profile && pathname === "/");
+  const onboarding =
+    pathname === "/welcome" || pathname === "/sign-in" || snap.status !== "ready" || (!snap.state.profile && pathname === "/");
+  const hosted = snap.status === "ready" && snap.backend === "supabase";
   const navLabel = (label: string, badge?: boolean) =>
     badge && dueCount > 0 ? `${label}, ${dueCount} due` : label;
 
@@ -42,9 +44,34 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span>SpecLoop Academy</span>
         </Link>
         <span className="spacer" />
-        <Link href="/about#demo-mode" className="demo-pill" title="Data is stored only in this browser. Not secure multi-user auth.">
-          Local demo mode
-        </Link>
+        {snap.status === "ready" && snap.saving && (
+          <span className="small muted" role="status">
+            Saving…
+          </span>
+        )}
+        {hosted ? (
+          <span className="row" style={{ gap: "0.5rem" }}>
+            <span className="small muted account-email" title={snap.account?.email ?? undefined}>
+              {snap.account?.email}
+            </span>
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={async () => {
+                await signOut();
+                window.location.assign("/sign-in");
+              }}
+            >
+              Sign out
+            </button>
+          </span>
+        ) : (
+          snap.status === "ready" && (
+            <Link href="/about#demo-mode" className="demo-pill" title="Data is stored only in this browser. Not secure multi-user auth.">
+              Local demo mode
+            </Link>
+          )
+        )}
       </header>
       <div className="layout">
         {!onboarding && (

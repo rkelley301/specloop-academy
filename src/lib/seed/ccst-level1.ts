@@ -1,5 +1,5 @@
 import type { Attribution, Lesson, LearningPath } from "../types";
-import seed from "./ccst-l1-seed.generated.json";
+import seed from "./ccst-l1-seed.generated.json" with { type: "json" };
 import type { ParsedSeedLesson } from "./parse-seed-lesson";
 
 // Seed course: "SpecLoop Academy — CCST Level 1 Seed Course", Draft v0.1.

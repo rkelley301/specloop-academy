@@ -13,10 +13,15 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
-    "seed:import": "node --experimental-strip-types scripts/import-seed.mts"
+    "seed:import": "node --experimental-strip-types scripts/import-seed.mts",
+    "seed:sql": "UPDATE_SEED_SQL=1 vitest run src/lib/seed/seed-sql.test.ts",
+    "test:e2e:hosted": "playwright test -c playwright.hosted.config.ts",
+    "verify:rls": "node scripts/verify-rls.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.118.0",
     "next": "^15.5.28",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

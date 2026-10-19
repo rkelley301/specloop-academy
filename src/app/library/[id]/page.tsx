@@ -8,7 +8,7 @@ import { EmptyState, WithState } from "@/components/StateViews";
 import { blankDraft, draftFromGenerated, templateDraft } from "@/lib/ai/draft-builders";
 import type { DraftRefusal } from "@/lib/ai/interpret";
 import { AI_MAX_SOURCE_CHARS } from "@/lib/ai/prompt";
-import { blobStorage } from "@/lib/blob-store";
+import { getBlobStorage } from "@/lib/blob-store";
 import { dispatch, newClientId } from "@/lib/store";
 import { SOURCE_TYPE_LABELS, type AppState, type GeneratedDraft, type Source } from "@/lib/types";
 import { useServerConfig } from "@/lib/use-config";
@@ -57,7 +57,7 @@ function AiDraftPanel({ state, source, onCreated }: { state: AppState; source: S
         return;
       }
       if (!res.ok || !body.draft) throw new Error(body.error ?? `Request failed (${res.status}).`);
-      const id = newClientId("drf");
+      const id = newClientId();
       dispatch({ type: "createDraft", id, draft: draftFromGenerated(body.draft, source, body.model ?? "unknown", new Date().toISOString(), newClientId) });
       onCreated(id);
     } catch (e) {
@@ -134,7 +134,7 @@ function SourceView({ state, source }: { state: AppState; source: Source }) {
   const now = () => new Date().toISOString();
 
   const create = (kind: "template" | "blank") => {
-    const id = newClientId("drf");
+    const id = newClientId();
     const draft =
       kind === "template"
         ? templateDraft(source, now(), newClientId)
@@ -145,7 +145,7 @@ function SourceView({ state, source }: { state: AppState; source: Source }) {
 
   const openFile = async () => {
     if (!source.file) return;
-    const blob = await blobStorage.get(source.file.blobId);
+    const blob = await getBlobStorage().get("source", source.file.blobId);
     if (!blob) {
       window.alert("The file isn't in this browser's storage any more.");
       return;
@@ -157,7 +157,7 @@ function SourceView({ state, source }: { state: AppState; source: Source }) {
 
   const remove = async () => {
     if (!window.confirm(`Delete “${source.title}”? Drafts made from it keep their citation.`)) return;
-    if (source.file) await blobStorage.remove(source.file.blobId).catch(() => undefined);
+    if (source.file) await getBlobStorage().remove("source", source.file.blobId).catch(() => undefined);
     dispatch({ type: "deleteSource", id: source.id });
     router.push("/library");
   };

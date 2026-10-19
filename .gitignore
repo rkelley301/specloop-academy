@@ -1,5 +1,7 @@
 node_modules/
 .next/
+.next-hosted/
+.next-misconfig/
 out/
 next-env.d.ts
 *.tsbuildinfo

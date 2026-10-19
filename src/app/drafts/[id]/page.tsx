@@ -57,11 +57,11 @@ function DraftEditor({ state, draft }: { state: AppState; draft: Draft }) {
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => ({ ...f, [k]: v }));
   const setQ = (i: number, patch: Partial<Question>) => set("questions", form.questions.map((q, j) => (j === i ? { ...q, ...patch } : q)));
   const addQ = () => {
-    const cid = newClientId("con");
+    const cid = newClientId();
     setForm((f) => ({
       ...f,
       concepts: [...f.concepts, { id: cid, label: `Recall ${f.questions.length + 1}` }],
-      questions: [...f.questions, { id: newClientId("q"), prompt: "", answerKey: "", conceptId: cid }],
+      questions: [...f.questions, { id: newClientId(), prompt: "", answerKey: "", conceptId: cid }],
     }));
   };
 

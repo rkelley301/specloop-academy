@@ -4,10 +4,12 @@ import { useRouter } from "next/navigation";
 import { ProfileForm } from "@/components/ProfileForm";
 import { IndependenceNote } from "@/components/Notes";
 import { WithState } from "@/components/StateViews";
-import { dispatch } from "@/lib/store";
+import { dispatch, useStore } from "@/lib/store";
 
 export default function WelcomePage() {
   const router = useRouter();
+  const snap = useStore();
+  const hosted = snap.status === "ready" && snap.backend === "supabase";
   return (
     <WithState requireProfile={false}>
       {(state) => (
@@ -31,11 +33,18 @@ export default function WelcomePage() {
               }}
             />
           </div>
-          <div className="notice notice-warning mt-1">
-            <strong>Local demo mode</strong>
-            Your profile and progress stay in this browser on this device. There&apos;s no account or sign-in, and this
-            isn&apos;t secure multi-user storage.
-          </div>
+          {hosted ? (
+            <div className="notice mt-1">
+              <strong>Saved to your account</strong>
+              Your profile and progress are stored in your SpecLoop account and are visible only to you.
+            </div>
+          ) : (
+            <div className="notice notice-warning mt-1">
+              <strong>Local demo mode</strong>
+              Your profile and progress stay in this browser on this device. There&apos;s no account or sign-in, and this
+              isn&apos;t secure multi-user storage.
+            </div>
+          )}
           <div className="mt-1">
             <IndependenceNote />
           </div>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { blobStorage } from "@/lib/blob-store";
+import { getBlobStorage } from "@/lib/blob-store";
 import { dispatch } from "@/lib/store";
 import type { AudioAsset, Lesson } from "@/lib/types";
 
@@ -20,8 +20,8 @@ export function useAudioUrl(asset: AudioAsset | undefined) {
     let url: string | null = null;
     let cancelled = false;
     setLoad({ state: "loading" });
-    blobStorage
-      .get(asset.id)
+    getBlobStorage()
+      .get("audio", asset.id)
       .then((blob) => {
         if (cancelled) return;
         if (!blob) {

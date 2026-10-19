@@ -2,11 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState, type ChangeEvent } from "react";
+import { ImportLocalData } from "@/components/ImportLocalData";
 import { ProfileForm } from "@/components/ProfileForm";
 import { WithState } from "@/components/StateViews";
 import { useToast } from "@/components/Toast";
-import { blobStorage } from "@/lib/blob-store";
-import { clearStoredState, dispatch } from "@/lib/store";
+import { getBlobStorage, localBlobStorage } from "@/lib/blob-store";
+import { clearStoredState, deleteMyHostedData, dispatch, readLocalState, useStore } from "@/lib/store";
 import { AppStateSchema, type AppState } from "@/lib/types";
 import { useServerConfig } from "@/lib/use-config";
 
@@ -26,6 +27,8 @@ function exportData(state: AppState) {
 }
 
 function SettingsView({ state }: { state: AppState }) {
+  const snap = useStore();
+  const hosted = snap.status === "ready" && snap.backend === "supabase" ? snap.account : null;
   const router = useRouter();
   const toast = useToast();
   const cfg = useServerConfig();
@@ -54,10 +57,34 @@ function SettingsView({ state }: { state: AppState }) {
 
   async function deleteAll() {
     if (!window.confirm("Delete all SpecLoop data in this browser: profile, progress, sources, drafts and audio? This can't be undone.")) return;
-    await blobStorage.clear().catch(() => undefined);
+    await getBlobStorage().clear().catch(() => undefined);
     clearStoredState();
     router.replace("/welcome");
   }
+
+  async function deleteHosted() {
+    if (!window.confirm("Delete all your SpecLoop data from your account: profile, progress, sources, drafts and files? This can't be undone.")) return;
+    try {
+      await deleteMyHostedData();
+      router.replace("/welcome");
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Couldn't delete your data.");
+    }
+  }
+
+  async function removeLocalCopy() {
+    if (!window.confirm("Remove the local demo data stored in this browser? Your account isn't affected.")) return;
+    await localBlobStorage.clear().catch(() => undefined);
+    try {
+      window.localStorage.removeItem("specloop:v1");
+    } catch {
+      /* ignore */
+    }
+    toast.show("Local demo data removed from this browser.");
+    router.refresh();
+  }
+  const localCopy = hosted ? readLocalState() : null;
+  const hasLocalCopy = Boolean(localCopy?.ok && localCopy.state);
 
   return (
     <>
@@ -127,7 +154,11 @@ function SettingsView({ state }: { state: AppState }) {
           <tbody>
             <tr>
               <th scope="row">Sign-in</th>
-              <td>Local demo mode. No account; data stays in this browser. Not secure multi-user auth.</td>
+              <td>
+                {hosted
+                  ? `Signed in as ${hosted.email ?? "your account"} (email link). Your data is stored in your SpecLoop account.`
+                  : "Local demo mode. No account; data stays in this browser. Not secure multi-user auth."}
+              </td>
             </tr>
             <tr>
               <th scope="row">Plan</th>
@@ -147,14 +178,6 @@ function SettingsView({ state }: { state: AppState }) {
               <th scope="row">OneStudio</th>
               <td>Manual upload workflow. Direct generation isn&apos;t configured.</td>
             </tr>
-            <tr>
-              <th scope="row">Hosted backend</th>
-              <td>
-                {cfg.status === "ready" && cfg.config.supabase.configured
-                  ? "Supabase variables are set, but this release doesn't use them yet. Data stays local."
-                  : "Not configured. Data stays local."}
-              </td>
-            </tr>
           </tbody>
         </table>
       </section>
@@ -162,7 +185,7 @@ function SettingsView({ state }: { state: AppState }) {
       <section className="card" aria-labelledby="data-h" id="data">
         <h2 id="data-h">Your data</h2>
         <p className="small muted">
-          Everything is stored in this browser: {Object.keys(state.lessons).length} lessons, {state.attempts.length} answers,{" "}
+          {hosted ? "Your account holds" : "Everything is stored in this browser"}: {Object.keys(state.lessons).length} lessons, {state.attempts.length} answers,{" "}
           {state.reviewItems.length} review items, {state.sources.length} sources, {state.drafts.length} drafts,{" "}
           {state.audioAssets.length} audio files.
         </p>
@@ -170,22 +193,54 @@ function SettingsView({ state }: { state: AppState }) {
           <button type="button" className="btn" onClick={() => exportData(state)}>
             Export data (JSON)
           </button>
-          <button type="button" className="btn" onClick={() => importRef.current?.click()}>
-            Import export file
-          </button>
-          <input ref={importRef} type="file" accept="application/json,.json" className="visually-hidden" onChange={onImport} aria-label="Import export file" tabIndex={-1} />
+          {!hosted && (
+            <>
+              <button type="button" className="btn" onClick={() => importRef.current?.click()}>
+                Replace with an export file
+              </button>
+              <input ref={importRef} type="file" accept="application/json,.json" className="visually-hidden" onChange={onImport} aria-label="Import export file" tabIndex={-1} />
+            </>
+          )}
         </div>
         {importError && (
           <p className="error-text" role="alert">
             {importError}
           </p>
         )}
+        {hosted && (
+          <>
+            <hr />
+            <ImportLocalData account={state} uid={hosted.userId} />
+            {hasLocalCopy && (
+              <p className="small mt-1 mb-0">
+                <button type="button" className="btn btn-sm" onClick={removeLocalCopy}>
+                  Remove local demo data from this browser
+                </button>
+              </p>
+            )}
+          </>
+        )}
         <hr />
-        <h3>Delete all data</h3>
-        <p className="small muted">Removes your profile, progress, sources, drafts and audio from this browser, then starts setup again.</p>
-        <button type="button" className="btn btn-danger" onClick={deleteAll}>
-          Delete all my data
-        </button>
+        {hosted ? (
+          <>
+            <h3>Delete my data</h3>
+            <p className="small muted">
+              Removes your profile, progress, sources, drafts and files from your account. Your sign-in stays active.
+              Deleting the sign-in itself has to be done by the project administrator.
+            </p>
+            <button type="button" className="btn btn-danger" onClick={deleteHosted}>
+              Delete my account data
+            </button>
+          </>
+        ) : (
+          <>
+            <h3>Delete all data</h3>
+            <p className="small muted">Removes your profile, progress, sources, drafts and audio from this browser, then starts setup again.</p>
+            <button type="button" className="btn btn-danger" onClick={deleteAll}>
+              Delete all my data
+            </button>
+          </>
+        )}
       </section>
       {toast.node}
     </>

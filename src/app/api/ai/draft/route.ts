@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { generateDraftWithAnthropic } from "@/lib/ai/anthropic";
 import { AI_MAX_SOURCE_CHARS } from "@/lib/ai/prompt";
+import { BACKEND } from "@/lib/backend-mode";
 import { aiConfig } from "@/lib/config";
+import { getServerSupabase } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +18,15 @@ const Body = z.object({
 });
 
 export async function POST(req: Request) {
+  // Fail closed: a half-configured deployment serves no AI requests, and in
+  // hosted mode only signed-in users may spend AI credits.
+  if (BACKEND.mode === "misconfigured") {
+    return NextResponse.json({ error: "The server's backend configuration is incomplete." }, { status: 503 });
+  }
+  if (BACKEND.mode === "supabase") {
+    const { data } = await (await getServerSupabase()).auth.getUser();
+    if (!data.user) return NextResponse.json({ error: "Sign in to use AI drafting." }, { status: 401 });
+  }
   const cfg = aiConfig();
   if (!cfg.enabled) {
     return NextResponse.json({ error: "AI drafting isn't configured on this server." }, { status: 503 });

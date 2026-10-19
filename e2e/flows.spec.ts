@@ -216,11 +216,9 @@ test("AI refusal is shown to the user and not retried", async ({ page }) => {
   await page.route("**/api/config", (r) =>
     r.fulfill({
       json: {
-        auth: "local-demo",
-        storage: "local",
+        backend: { mode: "local", problem: null },
         ai: { enabled: true, provider: "anthropic", model: "claude-opus-5-5" },
         tts: { onestudioConfigured: false },
-        supabase: { configured: false, wired: false },
         billing: { enabled: false, plan: "local-demo", message: "Payments aren't enabled in this build." },
       },
     }),

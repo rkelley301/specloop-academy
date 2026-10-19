@@ -11,6 +11,8 @@ import {
   today as todayOf,
   upcomingByDay,
 } from "@/lib/selectors";
+import { readLocalState, useStore } from "@/lib/store";
+import { hasImportableData } from "@/lib/supabase/import-plan";
 import type { AppState } from "@/lib/types";
 
 const REVIEW_MINUTES_PER_ITEM = 1.5;
@@ -28,6 +30,10 @@ function TodayView({ state }: { state: AppState }) {
   const planMinutes = (due.length ? reviewMinutes : 0) + (lesson?.estMinutes ?? 0);
   const budget = state.profile?.dailyMinutes ?? 10;
   const allDone = !lesson && due.length === 0;
+  const snap = useStore();
+  const hosted = snap.status === "ready" && snap.backend === "supabase";
+  const local = hosted ? readLocalState() : null;
+  const offerImport = Boolean(local?.ok && local.state && hasImportableData(local.state));
 
   return (
     <>
@@ -40,6 +46,14 @@ function TodayView({ state }: { state: AppState }) {
             : `Today's plan is about ${planMinutes} min. Your daily goal is ${budget} min.`}
         </p>
       </div>
+
+      {offerImport && (
+        <div className="notice notice-info" style={{ marginBottom: "1rem" }}>
+          <strong>Demo data found in this browser</strong>
+          It isn&apos;t part of your account. Review it and import it in{" "}
+          <Link href="/settings#data">Settings → Your data</Link>. Nothing is imported unless you confirm.
+        </div>
+      )}
 
       {due.length > 0 && (
         <section className="card card-accent" aria-labelledby="due-h">

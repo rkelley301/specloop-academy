@@ -1,7 +1,10 @@
 # Data model
 
 Source of truth: `src/lib/types.ts` (Zod schemas; the persisted state is
-validated on every load). Hosted equivalent: `supabase/migrations/0001_init.sql`.
+validated on every load). Hosted equivalent: `supabase/migrations/0001_init.sql`
+(tables and RLS), `0002_storage.sql` (private buckets), `0003_seed_ccst_l1.sql`
+(generated seed course), `0004_lesson_path_ownership.sql` (lessons only in
+paths the writer owns). Mapping between the two: `src/lib/supabase/rows.ts`.
 
 | Entity | Purpose | Key fields |
 | --- | --- | --- |
@@ -28,6 +31,14 @@ validated on every load). Hosted equivalent: `supabase/migrations/0001_init.sql`
   Clearing the last rung retires the item.
 - Answering in a lesson (first time or again) starts the schedule fresh.
 - Due dates are calendar dates in the learner's timezone.
+
+## Hosted storage
+
+- Each state change is diffed (`src/lib/supabase/sync.ts`) into upserts and
+  deletes on the user's rows, in foreign-key order; attributions are replaced
+  per lesson or draft. Seed content is never written by the app.
+- The per-user custom path is stored as `my-lessons:{user_id}`.
+- Files: buckets `audio` and `sources`, object path `{user_id}/{file_id}`.
 
 ## Local demo storage
 

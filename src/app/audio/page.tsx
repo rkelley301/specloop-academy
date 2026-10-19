@@ -6,11 +6,11 @@ import { Suspense, useRef, useState, type ChangeEvent } from "react";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { WithState } from "@/components/StateViews";
 import { useToast } from "@/components/Toast";
-import { blobStorage } from "@/lib/blob-store";
+import { getBlobStorage } from "@/lib/blob-store";
 import { AUDIO_MAX_BYTES, TTS_PROVIDERS, normalizedAudioType, validateAudioFile } from "@/lib/providers/tts";
 import { audioReadyScript, countPauses, wordCount } from "@/lib/script";
 import { orderedLessons } from "@/lib/selectors";
-import { dispatch, newClientId } from "@/lib/store";
+import { dispatch, newClientId, useStore } from "@/lib/store";
 import type { AppState, Lesson } from "@/lib/types";
 
 function LessonAudioPanel({ state, lesson }: { state: AppState; lesson: Lesson }) {
@@ -22,6 +22,8 @@ function LessonAudioPanel({ state, lesson }: { state: AppState; lesson: Lesson }
   const fileRef = useRef<HTMLInputElement>(null);
   const copyRef = useRef<HTMLTextAreaElement>(null);
   const dirty = script !== lesson.script;
+  const snap = useStore();
+  const sharedSeed = snap.status === "ready" && snap.backend === "supabase" && lesson.origin === "seed";
 
   async function copy() {
     const text = audioReadyScript(lesson.title, lesson.script);
@@ -57,9 +59,9 @@ function LessonAudioPanel({ state, lesson }: { state: AppState; lesson: Lesson }
     }
     setUploadError(null);
     setBusy(true);
-    const id = newClientId("aud");
+    const id = newClientId();
     try {
-      await blobStorage.put(id, file);
+      await getBlobStorage().put("audio", id, file, normalizedAudioType(file));
       const previous = asset;
       dispatch({
         type: "attachAudio",
@@ -73,7 +75,7 @@ function LessonAudioPanel({ state, lesson }: { state: AppState; lesson: Lesson }
           provider: "manual_upload",
         },
       });
-      if (previous) await blobStorage.remove(previous.id).catch(() => undefined);
+      if (previous) await getBlobStorage().remove("audio", previous.id).catch(() => undefined);
       toast.show(previous ? "Audio replaced." : "Audio attached to the lesson.");
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Couldn't store the audio file.");
@@ -85,7 +87,7 @@ function LessonAudioPanel({ state, lesson }: { state: AppState; lesson: Lesson }
   async function remove() {
     if (!asset || !window.confirm("Remove this audio from the lesson? The transcript stays.")) return;
     dispatch({ type: "removeAudio", assetId: asset.id });
-    await blobStorage.remove(asset.id).catch(() => undefined);
+    await getBlobStorage().remove("audio", asset.id).catch(() => undefined);
     toast.show("Audio removed.");
   }
 
@@ -169,15 +171,21 @@ function LessonAudioPanel({ state, lesson }: { state: AppState; lesson: Lesson }
           it no longer matches the current script.
           {lesson.origin === "seed" && " Seed scripts are draft content pending technical review, so keep edits to wording and pacing."}
         </p>
+        {sharedSeed && (
+          <div className="notice small" style={{ marginBottom: "0.6rem" }}>
+            Seed lessons are shared course content in your account, so their scripts are read-only here. Script changes
+            go through the seed course files and a new migration.
+          </div>
+        )}
         <label htmlFor="script-edit" className="visually-hidden">
           Narration script
         </label>
-        <textarea id="script-edit" className="script-editor" value={script} onChange={(e) => setScript(e.target.value)} />
+        <textarea id="script-edit" className="script-editor" value={script} readOnly={sharedSeed} onChange={(e) => setScript(e.target.value)} />
         <div className="row" style={{ marginTop: "0.6rem" }}>
           <button
             type="button"
             className="btn btn-primary"
-            disabled={!dirty || !script.trim()}
+            disabled={sharedSeed || !dirty || !script.trim()}
             onClick={() => {
               dispatch({ type: "updateLessonScript", lessonId: lesson.id, script });
               toast.show(`Saved as script v${lesson.scriptVersion + 1}.`);
