@@ -1,0 +1,215 @@
+{
+  "packVersion": "0.1",
+  "lessons": [
+    {
+      "file": "SL01_measurement_loop.md",
+      "code": "SL01",
+      "title": "The measurement loop: process to operator display",
+      "banner": "DRAFT — TECHNICAL REVIEW REQUIRED. This lesson is original educational draft content and has not been technically validated. Do not publish, sell, or use it as approved training until a qualified instrumentation and controls reviewer verifies the technical details, answer key, and safety language.",
+      "objective": "Trace a basic measurement from the process to the operator display and name the major points where evidence can be checked.",
+      "script": "A measurement loop turns a physical condition into information someone can use. Think of it as a path with several handoffs.\n\n[PAUSE 3 SECONDS]\n\nFirst is the process itself: pressure, temperature, level, or flow. A sensor responds to that condition. A transmitter converts the sensor response into a signal that can travel through wiring to a control-system input. The input converts the electrical signal into a value. The controller or display then presents that value to the operator.\n\n[PAUSE 3 SECONDS]\n\nHere is the path: process condition, sensing element, transmitter, field wiring, input channel, configured scaling, and display. A fault at any handoff can make the displayed value wrong, frozen, noisy, or absent.\n\n[PAUSE 3 SECONDS]\n\nWhen a reading looks wrong, do not jump straight to replacing the instrument. Compare what you can observe at each point, using approved procedures and appropriate test equipment. Does the local indication agree with the control-room value? Is the transmitter output plausible? Does the input channel show a matching signal? Is the configured range consistent with the instrument range?\n\n[PAUSE 3 SECONDS]\n\nThe key idea is localization. Each comparison narrows the fault to a section of the path. Never bypass required isolation, permits, or site safety rules to collect a measurement.",
+      "recall": [
+        "Put these in order: display, process, transmitter, input channel, field wiring.",
+        "Name two handoffs where a fault could make the displayed value wrong.",
+        "Why is replacing the transmitter not the first troubleshooting step?"
+      ],
+      "scenario": "A local instrument indication appears steady, but the control-room display is frozen. Which sections of the loop would you compare first, and what evidence would help distinguish a wiring/input issue from a display configuration issue?",
+      "answers": [
+        "Process → transmitter → field wiring → input channel → display. The sensing element is between process and transmitter.",
+        "Examples: sensing element to transmitter; transmitter to wiring; wiring to input; input scaling to display.",
+        "Because the symptom can arise downstream; compare evidence along the signal path before selecting a cause."
+      ],
+      "scenarioAnswer": null,
+      "reviewNote": "A local indicator is not guaranteed to be independent of the transmitter or sensor; equipment design varies. Verify the actual loop drawing and device arrangement."
+    },
+    {
+      "file": "SL02_4_20mA.md",
+      "code": "SL02",
+      "title": "What a 4–20 mA signal tells you",
+      "banner": "DRAFT — TECHNICAL REVIEW REQUIRED. This lesson is original educational draft content and has not been technically validated. Do not publish, sell, or use it as approved training until a qualified instrumentation and controls reviewer verifies the technical details, answer key, and safety language.",
+      "objective": "Explain the meaning of live zero and calculate a linear signal value.",
+      "script": "In a common analog instrument loop, four milliamps represents the bottom of the configured measurement range and twenty milliamps represents the top. The signal is often called live zero because a valid low-end measurement is above zero milliamps.\n\n[PAUSE 3 SECONDS]\n\nThat offset can help distinguish a valid low reading from some faults, but it does not diagnose a fault by itself. A broken wire, a device fault, or a system-specific alarm may produce different behavior. Always check the instrument and input-channel documentation.\n\n[PAUSE 3 SECONDS]\n\nFor a linear range, convert the measured current to a fraction of span. Subtract four milliamps, then divide by sixteen milliamps. That gives the fraction from zero to one. Multiply by the configured engineering-unit span and add the lower range value.\n\n[PAUSE 3 SECONDS]\n\nExample: a zero-to-one-hundred psi range at twelve milliamps. Twelve minus four is eight. Eight divided by sixteen is one-half. Half of the range is fifty psi.\n\n[PAUSE 3 SECONDS]\n\nThe relationship is: process value equals lower range value plus current minus four, divided by sixteen, times span. Confirm the configured range and signal type before using the result. A device may be configured for square-root extraction or another transfer function, so do not assume every loop is linear.",
+      "recall": [
+        "On a linear 4–20 mA loop, what fraction of span is 12 mA?",
+        "What does “live zero” mean here?",
+        "Name one reason the simple linear calculation may not apply."
+      ],
+      "scenario": "A transmitter is configured from 0 to 200 degrees. The loop current is 8 mA and the configured transfer is linear. What value should the signal represent?",
+      "answers": [
+        "50% of span: (12−4)/16 = 0.5.",
+        "The low end of the measurement range is represented by 4 mA, rather than 0 mA.",
+        "The loop may use a non-linear transfer function, such as square-root extraction, or have different configured endpoints."
+      ],
+      "scenarioAnswer": "50 degrees. Eight milliamps is 25% of span; 25% of 200 is 50.",
+      "reviewNote": null
+    },
+    {
+      "file": "SL03_range_zero_span.md",
+      "code": "SL03",
+      "title": "Range, zero, span, and engineering units",
+      "banner": "DRAFT — TECHNICAL REVIEW REQUIRED. This lesson is original educational draft content and has not been technically validated. Do not publish, sell, or use it as approved training until a qualified instrumentation and controls reviewer verifies the technical details, answer key, and safety language.",
+      "objective": "Distinguish lower range value, upper range value, and span, then convert a percent-of-span reading.",
+      "script": "An instrument range connects a signal to engineering units. The lower range value is the measurement represented at the low end of the output. The upper range value is the measurement represented at the high end. Span is the difference between them.\n\n[PAUSE 3 SECONDS]\n\nSuppose a level transmitter is ranged from 10 to 50 feet. The lower value is 10 feet. The upper value is 50 feet. Span is 40 feet. At 25 percent of span, add ten feet to one quarter of forty feet. The result is twenty feet.\n\n[PAUSE 3 SECONDS]\n\nNotice that zero percent of span is not always zero engineering units. In this example, zero percent corresponds to ten feet. This is why “zero” can mean different things in casual conversation. Be precise: say lower range value, upper range value, or zero percent of span.\n\n[PAUSE 3 SECONDS]\n\nBefore troubleshooting a mismatch, compare the configured range in the instrument with the range configured in the control system. If one side expects 10 to 50 feet and the other expects 0 to 50 feet, the displayed value can be wrong even when the signal itself is stable.\n\n[PAUSE 3 SECONDS]\n\nUse the approved configuration record and loop documentation. Do not change range settings just to make an indication look right; record and authorize changes according to site practice.",
+      "recall": [
+        "If the range is 10 to 50 feet, what is the span?",
+        "What engineering value is 25% of that span?",
+        "Why can different ranges in the instrument and control system cause a bad display?"
+      ],
+      "scenario": "A transmitter is set for 0 to 300 gallons per minute. The control system is set for 0 to 200. The signal is at 50% of the transmitter span. What value would each configuration imply?",
+      "answers": [
+        "40 feet.",
+        "10 + (0.25 × 40) = 20 feet.",
+        "The same signal fraction is converted using different endpoints."
+      ],
+      "scenarioAnswer": "The transmitter range implies 150 gallons per minute; the control-system scaling implies 100.",
+      "reviewNote": null
+    },
+    {
+      "file": "SL04_pressure.md",
+      "code": "SL04",
+      "title": "Pressure measurement: gauge, absolute, and differential",
+      "banner": "DRAFT — TECHNICAL REVIEW REQUIRED. This lesson is original educational draft content and has not been technically validated. Do not publish, sell, or use it as approved training until a qualified instrumentation and controls reviewer verifies the technical details, answer key, and safety language.",
+      "objective": "Explain the reference used by gauge, absolute, and differential pressure measurements.",
+      "script": "A pressure number is meaningful only when you know what it is compared against. Gauge pressure compares a pressure to local atmospheric pressure. A tire gauge is a familiar example: it reports pressure above the surrounding air.\n\n[PAUSE 3 SECONDS]\n\nAbsolute pressure compares pressure to a vacuum reference. At the surrounding atmosphere, absolute pressure is greater than zero. Gauge pressure and absolute pressure therefore use different reference points.\n\n[PAUSE 3 SECONDS]\n\nDifferential pressure, often shortened to DP, compares pressure at one connection with pressure at another. The result is the difference between the two sides. A DP transmitter can measure a pressure drop across equipment, or it can be arranged to infer level in a vessel. The installation and configuration determine what that difference means.\n\n[PAUSE 3 SECONDS]\n\nWhen a pressure reading seems wrong, ask: What are the two pressure points? What reference is being used? Are the connections and impulse lines arranged as shown on the drawing? Is the instrument ranged and scaled for the intended measurement?\n\n[PAUSE 3 SECONDS]\n\nDo not open, vent, or disconnect process connections as a casual troubleshooting step. Pressure systems can contain hazardous energy or process material. Follow the site isolation and work authorization process.",
+      "recall": [
+        "What does gauge pressure use as its reference?",
+        "What does absolute pressure use as its reference?",
+        "What does a DP transmitter compare?"
+      ],
+      "scenario": "A DP transmitter is connected across a filter. The operator reports that the reading increased. What does that trend generally suggest, and what should be confirmed before concluding the filter is plugged?",
+      "answers": [
+        "Local atmospheric pressure.",
+        "A vacuum reference.",
+        "Pressure at its high-side connection versus pressure at its low-side connection."
+      ],
+      "scenarioAnswer": "It suggests the pressure difference across the filter increased. Confirm the transmitter connections, operating conditions, signal integrity, and applicable maintenance criteria before diagnosing blockage.",
+      "reviewNote": null
+    },
+    {
+      "file": "SL05_temperature_sensors.md",
+      "code": "SL05",
+      "title": "RTD versus thermocouple",
+      "banner": "DRAFT — TECHNICAL REVIEW REQUIRED. This lesson is original educational draft content and has not been technically validated. Do not publish, sell, or use it as approved training until a qualified instrumentation and controls reviewer verifies the technical details, answer key, and safety language.",
+      "objective": "Describe the basic signal behavior of an RTD and thermocouple and why wiring details matter.",
+      "script": "RTDs and thermocouples both measure temperature, but they produce different electrical behavior. An RTD changes electrical resistance as temperature changes. A transmitter or measurement circuit uses that resistance relationship to calculate temperature.\n\n[PAUSE 3 SECONDS]\n\nA thermocouple uses two dissimilar conductors joined together. A temperature difference creates a small voltage. The measurement system uses that voltage, along with reference-junction compensation, to estimate temperature.\n\n[PAUSE 3 SECONDS]\n\nThe practical difference is that an RTD is fundamentally a resistance measurement, while a thermocouple is fundamentally a small-voltage measurement. Lead-wire arrangement, sensor type, polarity, extension wire, and input configuration matter. Exact details depend on the sensor and instrument model.\n\n[PAUSE 3 SECONDS]\n\nIf a temperature value is noisy or implausible, compare the installed sensor type with the configured input type. Then check drawings, terminations, and approved diagnostics. Do not assume a sensor is defective just because the display is wrong; configuration and wiring can create similar symptoms.\n\n[PAUSE 3 SECONDS]\n\nFor this lesson, remember the core distinction: RTD means changing resistance; thermocouple means a small voltage related to temperature difference. Use the manufacturer’s documentation for sensor curves, wire colors, and terminal details.",
+      "recall": [
+        "What electrical property does an RTD change with temperature?",
+        "What kind of signal does a thermocouple produce?",
+        "Name two setup details that should match the installed sensor."
+      ],
+      "scenario": "A temperature input reads far outside the expected range immediately after a sensor replacement. What configuration and installation details should be checked before replacing the new sensor?",
+      "answers": [
+        "Resistance.",
+        "A small voltage based on the temperature difference at the thermocouple junctions.",
+        "Sensor type, lead arrangement, polarity where applicable, extension wire, or input configuration."
+      ],
+      "scenarioAnswer": "Confirm sensor type and wiring arrangement against the input configuration and drawing; then follow approved diagnostic procedures and device documentation.",
+      "reviewNote": null
+    },
+    {
+      "file": "SL06_calibration_verification.md",
+      "code": "SL06",
+      "title": "Calibration versus verification",
+      "banner": "DRAFT — TECHNICAL REVIEW REQUIRED. This lesson is original educational draft content and has not been technically validated. Do not publish, sell, or use it as approved training until a qualified instrumentation and controls reviewer verifies the technical details, answer key, and safety language.",
+      "objective": "Distinguish checking an instrument from adjusting it and explain why as-found results matter.",
+      "script": "Verification asks whether an instrument performs within an accepted tolerance under stated test conditions. Calibration is the comparison of an instrument’s response with a known reference. Depending on the result and procedure, calibration work may include adjustment.\n\n[PAUSE 3 SECONDS]\n\nA useful record separates the as-found condition from the as-left condition. As-found means what the instrument did before adjustment. As-left means what it did after any approved adjustment. If you record only the final result, you lose evidence about the condition discovered in the field.\n\n[PAUSE 3 SECONDS]\n\nThe reference used for comparison should be suitable for the task and handled under the applicable quality process. Record the range, test points, readings, tolerance or acceptance criterion, equipment identification, and result as required by the procedure.\n\n[PAUSE 3 SECONDS]\n\nDo not adjust an instrument simply because a value differs from expectation. First verify the correct range, procedure, reference, environmental conditions, and measurement setup. Then follow the approved work instruction and authorization.\n\n[PAUSE 3 SECONDS]\n\nThe practical memory aid is: verify means determine whether it meets criteria; calibrate means compare with a reference and, when authorized, adjust. Preserve both the condition found and the condition left.",
+      "recall": [
+        "What does “as-found” describe?",
+        "Why should a record include as-left results too?",
+        "Does every calibration comparison automatically authorize adjustment?"
+      ],
+      "scenario": "A device is found outside tolerance, adjusted, and then passes. What two states should the record preserve, and why?",
+      "answers": [
+        "The measured performance before adjustment.",
+        "It documents the final condition after work and supports traceability.",
+        "No. Follow the applicable procedure and authorization."
+      ],
+      "scenarioAnswer": "As-found and as-left. The as-found result shows the condition discovered; the as-left result shows the condition after the authorized action.",
+      "reviewNote": null
+    },
+    {
+      "file": "SL07_troubleshooting.md",
+      "code": "SL07",
+      "title": "Troubleshoot from symptom to cause",
+      "banner": "DRAFT — TECHNICAL REVIEW REQUIRED. This lesson is original educational draft content and has not been technically validated. Do not publish, sell, or use it as approved training until a qualified instrumentation and controls reviewer verifies the technical details, answer key, and safety language.",
+      "objective": "Use a structured evidence path to separate likely sensor, wiring, input, scaling, and display problems.",
+      "script": "Good troubleshooting starts with a clear symptom. Write down what is wrong: no reading, frozen value, intermittent signal, noisy reading, or a value that is consistently offset. “The instrument is bad” is a conclusion, not a symptom.\n\n[PAUSE 3 SECONDS]\n\nNext, compare evidence along the signal path. Check the process condition and local indication if available. Review the transmitter output using the approved method. Compare it with the control-system input indication. Then confirm input-channel health, configured range, units, and display scaling.\n\n[PAUSE 3 SECONDS]\n\nEach comparison narrows the fault. If the transmitter output changes but the input value does not, investigate the path between them and the input channel. If the input value is reasonable but the display is wrong, scaling, tag selection, or display configuration becomes more likely.\n\n[PAUSE 3 SECONDS]\n\nKeep observations separate from hypotheses. Record the time, operating condition, observed values, and the test point. Change one thing at a time when the approved procedure allows it, and compare the result.\n\n[PAUSE 3 SECONDS]\n\nThis is a reasoning framework, not permission to test energized equipment. Use the required permits, isolation, PPE, and qualified supervision for the actual task.",
+      "recall": [
+        "Give one example of a symptom and one example of a conclusion.",
+        "If the input value is reasonable but the operator display is wrong, what areas become more likely?",
+        "Why compare the transmitter output with the input value?"
+      ],
+      "scenario": "A transmitter’s local value changes with process conditions. The control-system input stays flat. What fault region should be investigated next, and what site documents help?",
+      "answers": [
+        "Symptom: value frozen. Conclusion: transmitter failed.",
+        "Input scaling, units, tag selection, or display configuration.",
+        "To determine whether the problem is before the input channel or inside/downstream of it."
+      ],
+      "scenarioAnswer": "The signal path between the transmitter and the input channel, including field wiring and terminations, plus the input channel. Use the loop drawing, I/O records, and approved procedures.",
+      "reviewNote": null
+    },
+    {
+      "file": "SL08_control_valve.md",
+      "code": "SL08",
+      "title": "Control valve position and feedback",
+      "banner": "DRAFT — TECHNICAL REVIEW REQUIRED. This lesson is original educational draft content and has not been technically validated. Do not publish, sell, or use it as approved training until a qualified instrumentation and controls reviewer verifies the technical details, answer key, and safety language.",
+      "objective": "Distinguish a controller command from actual valve position and recognize why they can differ.",
+      "script": "A control valve changes flow or pressure by moving a mechanical element in response to a control demand. The control system sends a command to the valve assembly. A positioner may compare that command with feedback about actual stem or shaft position and drive the actuator to reduce the difference.\n\n[PAUSE 3 SECONDS]\n\nCommand and position are not the same fact. A command can change while the valve is stuck. The valve may move while the feedback signal is faulty. A display might show demand, feedback, or both, so confirm which tag you are viewing.\n\n[PAUSE 3 SECONDS]\n\nIf command and feedback disagree, possible areas include the signal path, positioner configuration, actuator supply, mechanical friction, linkage, or feedback setup. These are possibilities to investigate, not diagnoses. Actual valve design and safe test methods vary.\n\n[PAUSE 3 SECONDS]\n\nA useful first question is: what changed, and what did not? Compare demand, indicated position, process response, and any available diagnostics under the approved procedure. Do not force a valve or defeat an interlock to prove a theory.\n\n[PAUSE 3 SECONDS]\n\nRemember: controller command is the requested action. Position feedback is evidence of motion or position. Process response tells you what the system did. Those three views help separate control demand, valve movement, and process behavior.",
+      "recall": [
+        "What is the difference between command and position feedback?",
+        "Name two broad fault areas that could cause them to disagree.",
+        "Why should you confirm which tag the display shows?"
+      ],
+      "scenario": "The command rises, but feedback remains steady and the process flow does not change. Name three categories of evidence to compare before assigning a cause.",
+      "answers": [
+        "Command is the requested action; feedback reports sensed valve position.",
+        "Signal/configuration, actuator supply, mechanical/linkage, or feedback fault.",
+        "A display may show demand, feedback, or another derived value."
+      ],
+      "scenarioAnswer": "Compare command, position feedback, and process response; then use device diagnostics and approved checks for signal, actuator, and mechanical condition.",
+      "reviewNote": null
+    },
+    {
+      "file": "SL09_loop_check.md",
+      "code": "SL09",
+      "title": "Loop checks and commissioning evidence",
+      "banner": "DRAFT — TECHNICAL REVIEW REQUIRED. This lesson is original educational draft content and has not been technically validated. Do not publish, sell, or use it as approved training until a qualified instrumentation and controls reviewer verifies the technical details, answer key, and safety language.",
+      "objective": "Describe a point-to-point loop check and the evidence it should produce.",
+      "script": "A loop check confirms that a field measurement or command travels through the intended path and is represented correctly at the destination. It is one part of commissioning and startup work, performed under the project’s approved plan.\n\n[PAUSE 3 SECONDS]\n\nFor a measurement loop, the team may verify the field device, wiring, input channel, tag, range, units, alarm behavior, and display. For an output loop, the team may verify the command path and the expected response at the final element. The exact scope depends on the loop and the approved test procedure.\n\n[PAUSE 3 SECONDS]\n\nThe evidence matters. Record the loop or tag identification, test point or stimulus, expected result, observed result, pass/fail status, date, people involved, and any exception or correction required by the project form.\n\n[PAUSE 3 SECONDS]\n\nA loop check is not a substitute for every functional, safety, or performance test. It confirms only what the procedure says it confirms. If a step is skipped or a result differs, document it and route it through the project’s resolution process.\n\n[PAUSE 3 SECONDS]\n\nBefore testing, confirm the drawing revision, test boundaries, process state, and required approvals. Never introduce a test signal or actuate equipment without the approved coordination and safeguards.",
+      "recall": [
+        "What is the basic purpose of a loop check?",
+        "Name three items that make a loop-check record useful.",
+        "Does passing a loop check prove every function is correct?"
+      ],
+      "scenario": "A loop check passes at the input channel, but the operator display shows the wrong units. What should be documented and investigated?",
+      "answers": [
+        "Confirm the intended signal path and representation within the scope of the approved procedure.",
+        "Examples: tag, test point, expected and observed values, result, date, participants, exceptions.",
+        "No; it verifies only the scope of the test procedure."
+      ],
+      "scenarioAnswer": "Record the passed measurement and the unit mismatch as separate observations. Review configured scaling, units, tag mapping, display configuration, and project records.",
+      "reviewNote": null
+    },
+    {
+      "file": "SL10_documentation.md",
+      "code": "SL10",
+      "title": "Close the work order with useful records",
+      "banner": "DRAFT — TECHNICAL REVIEW REQUIRED. This lesson is original educational draft content and has not been technically validated. Do not publish, sell, or use it as approved training until a qualified instrumentation and controls reviewer verifies the technical details, answer key, and safety language.",
+      "objective": "Identify the details that make a maintenance record useful for traceability and future troubleshooting.",
+      "script": "A maintenance record should let the next person understand what was reported, what was observed, what work was done, and what condition remained afterward. A short entry can be useful if it is specific.\n\n[PAUSE 3 SECONDS]\n\nRecord the equipment or loop identification, the original symptom, relevant operating conditions, checks performed, measured values when applicable, parts or settings changed, the result, and any follow-up needed. Include dates and required references to calibration equipment or procedures when the work requires them.\n\n[PAUSE 3 SECONDS]\n\nSeparate fact from interpretation. “Input remained at 12.0 mA during the approved test” is an observation. “Transmitter is bad” is a conclusion and should be supported by evidence. If the cause remains uncertain, say so and record the next action.\n\n[PAUSE 3 SECONDS]\n\nGood records protect continuity. They help detect repeat failures, show the condition before and after work, and make handoff clearer. Follow your site’s required forms, naming conventions, approvals, and record-retention rules.\n\n[PAUSE 3 SECONDS]\n\nBefore closing, ask: can another technician understand what happened without asking me to reconstruct it from memory? If not, add the missing observation or follow-up detail.",
+      "recall": [
+        "Name four details that make a work record useful.",
+        "How should an uncertain cause be recorded?",
+        "Why separate observations from conclusions?"
+      ],
+      "scenario": "A work note says only “fixed level transmitter.” What information would you add so the next technician can understand the fault and the work performed?",
+      "answers": [
+        "Examples: equipment/tag, symptom, conditions, checks, values, work performed, settings/parts changed, result, follow-up, references.",
+        "State that the cause is unconfirmed and document evidence plus next action.",
+        "It prevents an unsupported guess from being mistaken for a measured fact."
+      ],
+      "scenarioAnswer": "Add the tag, reported symptom, relevant readings and conditions, checks performed, confirmed cause if known, repair or adjustment, final result, and any remaining action, using site-required documentation.",
+      "reviewNote": null
+    }
+  ]
+}
