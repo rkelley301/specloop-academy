@@ -16,7 +16,8 @@
     "seed:import": "node --experimental-strip-types scripts/import-seed.mts",
     "seed:sql": "UPDATE_SEED_SQL=1 vitest run src/lib/seed/seed-sql.test.ts",
     "test:e2e:hosted": "playwright test -c playwright.hosted.config.ts",
-    "verify:rls": "node scripts/verify-rls.mjs"
+    "verify:rls": "node scripts/verify-rls.mjs",
+    "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",

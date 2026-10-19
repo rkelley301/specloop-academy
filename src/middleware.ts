@@ -6,7 +6,21 @@ import { BACKEND } from "./lib/backend-mode";
 // signed-out visitors to /sign-in. Local mode: no-op. Misconfigured: pages
 // render their configuration error; API routes refuse (see route handlers).
 
-const PUBLIC_PATHS = ["/sign-in", "/auth/", "/about", "/api/config"];
+// Install/offline assets must load for signed-out visitors too, or the app
+// can't be installed from the sign-in screen.
+const PUBLIC_PATHS = [
+  "/sign-in",
+  "/auth/",
+  "/about",
+  "/api/config",
+  "/manifest.webmanifest",
+  "/sw.js",
+  "/offline.html",
+  "/icons/",
+  "/icon.svg",
+  "/apple-icon.png",
+  "/favicon.ico",
+];
 
 export async function middleware(request: NextRequest) {
   if (BACKEND.mode !== "supabase") return NextResponse.next();

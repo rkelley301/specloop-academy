@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f6e68">
+  <title>Offline · SpecLoop Academy</title>
+  <style>
+    :root { --bg: #f4f6f8; --surface: #fff; --text: #0f1f3a; --muted: #46566e; --accent: #0f6e68; --border: #d5dde5; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; line-height: 1.6; }
+    main { max-width: 520px; margin: 0 auto; padding: max(2rem, env(safe-area-inset-top)) 1rem 2rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; }
+    img { display: block; margin-bottom: 1rem; }
+    h1 { font-size: 1.4rem; margin: 0 0 0.5rem; }
+    p { margin: 0 0 0.75rem; color: var(--muted); }
+    button { min-height: 44px; padding: 0.55rem 1rem; border-radius: 6px; border: 1px solid var(--accent); background: var(--accent); color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+    button:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 2px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="card">
+      <img src="/icons/icon-192.png" width="56" height="56" alt="">
+      <h1>You're offline</h1>
+      <p>This page hasn't been saved for offline use yet. Pages you've opened before, including Today, the learning path and the seeded lessons, still work without a connection.</p>
+      <p>Your progress is stored on this device, so nothing is lost.</p>
+      <button type="button" onclick="location.reload()">Try again</button>
+    </div>
+  </main>
+</body>
+</html>

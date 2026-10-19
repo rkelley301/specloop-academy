@@ -7,7 +7,7 @@ const port = Number(process.env.E2E_PORT || 3100);
 
 export default defineConfig({
   testDir: "./e2e",
-  testIgnore: ["hosted.spec.ts"],
+  testIgnore: ["hosted.spec.ts", "misconfigured.spec.ts"], // run by playwright.hosted.config.ts
   timeout: 60_000,
   fullyParallel: false,
   workers: 1,

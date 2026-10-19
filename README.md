@@ -30,6 +30,30 @@ npm run build && npm run start
 
 Open the app, complete the welcome form, and you land on **Today** with the 10-lesson sample path.
 
+## Install on an Android phone
+
+SpecLoop is an installable web app (PWA): it gets a home-screen icon, opens full-screen without browser bars, and keeps working offline. Local demo mode stays the default; your data lives on the phone.
+
+Chrome installs a web app only from a **secure origin**: an `https://` address, or `localhost` on the phone itself. Your laptop's network address (`http://192.168.x.x:3000`) doesn't qualify. Pick one way to reach it:
+
+- **USB, nothing deployed (recommended for trying it).** Turn on USB debugging on the phone (Settings → About phone → tap *Build number* 7 times → Developer options → USB debugging), connect it, then on the laptop:
+  ```bash
+  npm run build && npm run start          # the service worker is production-only
+  adb reverse tcp:3000 tcp:3000            # phone's localhost:3000 → laptop
+  ```
+  On the phone, open **Chrome** at `http://localhost:3000`.
+- **HTTPS hosting.** Deploy the app to any HTTPS host and open that address. Anyone with the URL can reach it, and the seed course is marked "do not publish" until it has had technical review, so keep it private or access-controlled.
+
+Then in Chrome: **⋮ menu → Add to Home screen → Install** (some versions show **Install app** directly). The SpecLoop icon appears with your other apps.
+
+Good to know:
+
+- **Offline:** at install, the service worker caches Today, Path, Review, Library, Settings, About, Audio studio, and all ten seed lessons. Other pages are cached the first time you open them. A page that was never cached shows a short "You're offline" screen instead of a browser error. Answers and progress made offline are saved on the device as usual.
+- **Not cached:** `/api/*` and `/auth/*` always go to the network, and redirects are never stored.
+- **Updates:** pages are fetched fresh whenever you're online, so a new build shows up on the next open. If you change caching rules in `public/sw.js`, bump its `VERSION` so old caches are cleared.
+- **Your data:** it belongs to the address you installed from. `localhost:3000` and an HTTPS address are separate, each with its own progress. Use Settings → Export and the import flow to move data between them.
+- **Clearing Chrome's site data** for that address erases your progress, so export first if you want a copy.
+
 ## Commands
 
 | Command | What it does |
@@ -39,9 +63,10 @@ Open the app, complete the welcome form, and you land on **Today** with the 10-l
 | `npm run lint` | ESLint (Next.js core-web-vitals + TypeScript rules) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | Vitest unit tests (scheduler, reducer, seed import, validation) |
-| `npm run test:e2e` | Playwright end-to-end tests in local mode, desktop and phone viewports, with axe accessibility checks. Builds must exist (`npm run build`). Set `PLAYWRIGHT_CHROMIUM_PATH` to use a system Chromium; otherwise run `npx playwright install chromium` once. |
+| `npm run test:e2e` | Playwright end-to-end tests in local mode, desktop and phone viewports, with axe accessibility checks, PWA installability (Chrome's own check) and offline behavior. Builds must exist (`npm run build`). Set `PLAYWRIGHT_CHROMIUM_PATH` to use a system Chromium; otherwise run `npx playwright install chromium` once. |
 | `npm run test:e2e:hosted` | Hosted-mode end-to-end tests: builds into `.next-hosted` with Supabase variables pointed at `e2e/mock-supabase.mjs` (an in-memory stand-in for the Supabase API; it doesn't enforce RLS). |
 | `npm run verify:rls` | Checks RLS and storage policies against a **live** Supabase project as two real signed-in users. See [Verify a live project](#verify-a-live-project). |
+| `npm run icons` | Regenerates the app icons and favicons from the SVG design in `scripts/generate-icons.mjs` |
 | `npm run seed:sql` | Regenerates `supabase/migrations/0003_seed_ccst_l1.sql` from the bundled seed course |
 | `npm run check` | lint + typecheck + unit tests + build |
 | `npm run seed:import` | Regenerates the seed JSON from `content/ccst-l1-seed-v0.1/*.md` |
@@ -146,7 +171,8 @@ Cleanup is part of the result. Each file removal and user deletion is its own ch
 specloop-academy/
   content/ccst-l1-seed-v0.1/   seed course markdown (source of truth)
   docs/                        data model, OneStudio integration notes
-  e2e/                         Playwright tests (local + hosted with a mock Supabase API)
+  e2e/                         Playwright tests (local, PWA install/offline, hosted with a mock Supabase API)
+  public/                      service worker (sw.js), offline page, manifest icons
   scripts/import-seed.mts      seed markdown → JSON
   scripts/verify-rls.mjs       live RLS/storage policy check (two real users)
   supabase/migrations/         schema + RLS, storage, seed course, policy fixes
