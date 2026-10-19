@@ -16,7 +16,8 @@ It runs in two modes:
 Requires Node.js 20+ (built and tested on Node 22).
 
 ```bash
-cd specloop
+git clone https://github.com/rkelley301/specloop-academy.git
+cd specloop-academy
 npm install
 npm run dev            # http://localhost:3000
 ```
@@ -108,7 +109,7 @@ Copy `.env.example` to `.env.local`. Every integration is off unless configured,
 2. **Authentication → Providers → Email:** enabled. Magic links work with the default template. Keep **Confirm email** on.
 3. **Authentication → URL Configuration:** set **Site URL** to where the app runs (for a local pilot, `http://localhost:3000`) and add `http://localhost:3000/auth/callback` to **Redirect URLs**. Add the production URL and its `/auth/callback` when you deploy.
 4. **Email sending:** the built-in sender is rate-limited and meant for testing. For a pilot with more than a few people, configure your own SMTP under **Authentication → Emails → SMTP Settings**.
-5. Put the project URL and **anon** key in `specloop/.env.local`:
+5. Put the project URL and **anon** key in `.env.local` at the repo root:
    ```
    NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key>
@@ -117,7 +118,7 @@ Copy `.env.example` to `.env.local`. Every integration is off unless configured,
 
 ### Verify a live project
 
-**1. Automated policy check (two temporary users).** From `specloop/`, with the keys only in your shell:
+**1. Automated policy check (two temporary users).** From the repo root, with the keys only in your shell:
 
 ```bash
 SUPABASE_URL=https://<ref>.supabase.co \
@@ -141,7 +142,7 @@ The service-role key is used only to create two pre-confirmed throwaway users, m
 ## Project layout
 
 ```
-specloop/
+specloop-academy/
   content/ccst-l1-seed-v0.1/   seed course markdown (source of truth)
   docs/                        data model, OneStudio integration notes
   e2e/                         Playwright tests (local + hosted with a mock Supabase API)
