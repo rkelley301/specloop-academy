@@ -21,7 +21,7 @@
 
 import { randomUUID } from "node:crypto";
 import process from "node:process";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, isAuthApiError } from "@supabase/supabase-js";
 
 /** Reads a line from the terminal without echoing it. */
 function promptHidden(question) {
@@ -231,6 +231,17 @@ async function main() {
   record("Audio bucket is private (public URL doesn't serve the file)", !resp.ok, `HTTP ${resp.status}`);
 }
 
+/**
+ * True only for Supabase Auth's "user not found" answer: HTTP 404 with code
+ * user_not_found (or, from older Auth servers that send no code, a 404 whose
+ * message says the user wasn't found). Any other error proves nothing.
+ */
+function isUserNotFound(error) {
+  if (!isAuthApiError(error) || error.status !== 404) return false;
+  if (error.code) return error.code === "user_not_found";
+  return /user not found/i.test(error.message);
+}
+
 /** Each cleanup step is recorded as a check, so leftovers fail the run. */
 async function cleanupStep(name, fn) {
   try {
@@ -256,8 +267,9 @@ async function cleanup() {
       const { error } = await admin.auth.admin.deleteUser(u.id);
       if (error) return `delete failed: ${error.message}`;
       const { data, error: getErr } = await admin.auth.admin.getUserById(u.id);
-      if (!getErr && data?.user) return "user still exists after delete";
-      return "";
+      if (!getErr) return data?.user ? "user still exists after delete" : "lookup returned no user and no not-found error; deletion unconfirmed";
+      if (isUserNotFound(getErr)) return "";
+      return `couldn't confirm deletion (lookup failed: ${getErr.status ?? "no status"} ${getErr.code ?? ""} ${getErr.message})`.replace(/\s+/g, " ");
     });
   }
   // Root-level object from the negative test, in case a misconfigured policy let it through.
