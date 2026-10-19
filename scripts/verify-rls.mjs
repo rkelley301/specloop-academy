@@ -2,10 +2,12 @@
 // Verifies SpecLoop's row-level security and storage policies against a LIVE
 // Supabase project, acting as real signed-in users.
 //
-//   SUPABASE_URL=https://xyz.supabase.co \
-//   SUPABASE_ANON_KEY=... \
-//   SUPABASE_SERVICE_ROLE_KEY=... \
-//   npm run verify:rls
+//   SUPABASE_URL=https://xyz.supabase.co SUPABASE_ANON_KEY=<anon key> npm run verify:rls
+//
+// The script then asks for the service-role key at a hidden prompt (not
+// echoed, not saved in shell history). For non-interactive use, it reads
+// SUPABASE_SERVICE_ROLE_KEY from the environment instead; inject that from a
+// secret store, never type it into a command line.
 //
 // The service-role key bypasses RLS, so it is used ONLY to:
 //   1. create two temporary, pre-confirmed users (no emails are sent),
@@ -18,14 +20,57 @@
 // in the app, or in the browser.
 
 import { randomUUID } from "node:crypto";
+import process from "node:process";
 import { createClient } from "@supabase/supabase-js";
+
+/** Reads a line from the terminal without echoing it. */
+function promptHidden(question) {
+  const stdin = process.stdin;
+  if (!stdin.isTTY) {
+    return Promise.reject(new Error("No terminal for the hidden prompt. Set SUPABASE_SERVICE_ROLE_KEY from a secret store instead."));
+  }
+  process.stdout.write(question);
+  return new Promise((resolve, reject) => {
+    let value = "";
+    const finish = (fn, arg) => {
+      stdin.removeListener("data", onData);
+      stdin.setRawMode(false);
+      stdin.pause();
+      process.stdout.write("\n");
+      fn(arg);
+    };
+    const onData = (chunk) => {
+      for (const ch of chunk) {
+        if (ch === "\r" || ch === "\n" || ch === "\u0004") return finish(resolve, value.trim());
+        if (ch === "\u0003") return finish(reject, new Error("Cancelled."));
+        if (ch === "\u007f" || ch === "\b") value = value.slice(0, -1);
+        else value += ch;
+      }
+    };
+    stdin.setRawMode(true);
+    stdin.setEncoding("utf8");
+    stdin.resume();
+    stdin.on("data", onData);
+  });
+}
 
 const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!url || !anonKey || !serviceKey) {
-  console.error("Set SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY (in your shell, not in a committed file).");
+if (!url || !anonKey) {
+  console.error("Set SUPABASE_URL and SUPABASE_ANON_KEY (both are public values). The service-role key is asked for separately.");
+  process.exit(2);
+}
+let serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!serviceKey) {
+  try {
+    serviceKey = await promptHidden("Service-role key (input hidden): ");
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : String(err));
+    process.exit(2);
+  }
+}
+if (!serviceKey) {
+  console.error("No service-role key entered.");
   process.exit(2);
 }
 if (serviceKey === anonKey) {
@@ -186,17 +231,40 @@ async function main() {
   record("Audio bucket is private (public URL doesn't serve the file)", !resp.ok, `HTTP ${resp.status}`);
 }
 
+/** Each cleanup step is recorded as a check, so leftovers fail the run. */
+async function cleanupStep(name, fn) {
+  try {
+    const problem = await fn();
+    record(`cleanup: ${name}`, !problem, problem || "");
+  } catch (err) {
+    record(`cleanup: ${name}`, false, err instanceof Error ? err.message : String(err));
+  }
+}
+
 async function cleanup() {
   for (const u of users) {
     for (const bucket of ["audio", "sources"]) {
-      const { data } = await admin.storage.from(bucket).list(u.id, { limit: 1000 });
-      if (data?.length) await admin.storage.from(bucket).remove(data.map((f) => `${u.id}/${f.name}`));
+      await cleanupStep(`remove ${u.email} files from ${bucket}`, async () => {
+        const { data, error } = await admin.storage.from(bucket).list(u.id, { limit: 1000 });
+        if (error) return `list failed: ${error.message}`;
+        if (!data?.length) return "";
+        const { error: rmErr } = await admin.storage.from(bucket).remove(data.map((f) => `${u.id}/${f.name}`));
+        return rmErr ? `remove failed: ${rmErr.message}` : "";
+      });
     }
-    const { error } = await admin.auth.admin.deleteUser(u.id);
-    console.log(error ? `cleanup: couldn't delete ${u.email}: ${error.message}` : `cleanup: deleted ${u.email}`);
+    await cleanupStep(`delete user ${u.email}`, async () => {
+      const { error } = await admin.auth.admin.deleteUser(u.id);
+      if (error) return `delete failed: ${error.message}`;
+      const { data, error: getErr } = await admin.auth.admin.getUserById(u.id);
+      if (!getErr && data?.user) return "user still exists after delete";
+      return "";
+    });
   }
   // Root-level object from the negative test, in case a misconfigured policy let it through.
-  await admin.storage.from("audio").remove(["loose.wav"]);
+  await cleanupStep("remove root-level test object", async () => {
+    const { error } = await admin.storage.from("audio").remove(["loose.wav"]);
+    return error ? error.message : "";
+  });
 }
 
 try {
@@ -211,5 +279,9 @@ console.log(`\n${results.length - failed.length}/${results.length} checks passed
 if (failed.length) {
   console.log("Failures:");
   for (const f of failed) console.log(`  - ${f.name}: ${f.detail}`);
+  if (failed.some((f) => f.name.startsWith("cleanup:"))) {
+    console.log("\nSome test users or files may remain. Look for emails starting with specloop-rls- under Authentication → Users and remove them.");
+  }
   process.exit(1);
 }
+process.exit(0);

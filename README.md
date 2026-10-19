@@ -118,16 +118,17 @@ Copy `.env.example` to `.env.local`. Every integration is off unless configured,
 
 ### Verify a live project
 
-**1. Automated policy check (two temporary users).** From the repo root, with the keys only in your shell:
+**1. Automated policy check (two temporary users).** From the repo root:
 
 ```bash
-SUPABASE_URL=https://<ref>.supabase.co \
-SUPABASE_ANON_KEY=<anon key> \
-SUPABASE_SERVICE_ROLE_KEY=<service role key> \
-npm run verify:rls
+SUPABASE_URL=https://<ref>.supabase.co SUPABASE_ANON_KEY=<anon key> npm run verify:rls
 ```
 
-The service-role key is used only to create two pre-confirmed throwaway users, mint each a one-time magic-link token, and delete them (and their files) afterwards. No emails are sent. Every check runs through that user's own anon-key client after signing in. That covers B being unable to read, update, delete, or spoof A's rows, A's lessons and paths, and A's files (download, signed URL, list, upload into A's folder, delete), plus the signed-out role and the public-URL check, with positive controls so a broken client can't pass by accident. The script exits non-zero on any failure. Don't save the service-role key in a file.
+The URL and anon key are public values. The script then asks for the **service-role key at a hidden prompt**: paste it and press Enter. It isn't echoed, and it isn't saved in your shell history or any file. Don't pass the service-role key on the command line or put it in `.env.local`. For non-interactive runs (CI), the script reads `SUPABASE_SERVICE_ROLE_KEY` from the environment instead, so inject it from a secret store.
+
+The service-role key is used only to create two pre-confirmed throwaway users, mint each a one-time magic-link token, and delete them (and their files) afterwards. No emails are sent. Every check runs through that user's own anon-key client after signing in. That covers B being unable to read, update, delete, or spoof A's rows, A's lessons and paths, and A's files (download, signed URL, list, upload into A's folder, delete), plus the signed-out role and the public-URL check, with positive controls so a broken client can't pass by accident.
+
+Cleanup is part of the result. Each file removal and user deletion is its own check, and a deleted user is confirmed gone. If any cleanup step fails, the run exits non-zero and tells you to remove leftover `specloop-rls-*` users under **Authentication → Users**. The script exits 0 only when every policy check and every cleanup step passed.
 
 **2. Manual browser checklist.**
 
