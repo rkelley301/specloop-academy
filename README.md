@@ -4,6 +4,8 @@ A voice-first learning app for instrumentation and controls (I&C) technicians. I
 
 It runs locally with **no API keys**. Everything is stored in your browser (local demo mode).
 
+> **Status: local prototype.** It is not a deployed or multi-user product. There's no sign-in, no hosted database, and no payments. See the [roadmap](#roadmap).
+
 > Independent study support. Not endorsed by or affiliated with ISA. Not a complete CCST exam blueprint, and no guarantee of certification or regulatory compliance. The seeded lessons are **drafts that require technical review** (see [Seed course](#seed-course)).
 
 ## Quick start
@@ -76,7 +78,7 @@ Copy `.env.example` to `.env.local`. Every integration is off unless configured,
 ### AI drafting details
 
 - `POST /api/ai/draft` uses the Anthropic TypeScript SDK with structured output validated against `GeneratedDraftSchema` (objective, script with pause cues, recall questions, scenario, answer keys, cited sources, uncertainties, `technicalReviewStatus: "requires_review"`). The output is validated again with Zod.
-- Server-side refusal fallback (`fallbacks: "default"`) is enabled, so a request declined by a safety classifier is retried on Anthropic's recommended fallback model. Remove it in `src/lib/ai/anthropic.ts` if you don't want that.
+- Exactly one request goes to the configured model, with no fallback model and no automatic retry. If the model declines (`stop_reason: "refusal"`), the refusal's category and explanation are shown to the user as-is, no draft is created, and the send button stays disabled until the source text changes. The manual template path remains available. Unit and end-to-end tests check this.
 - The prompt requires original wording, citations for source-derived claims, `[VERIFY]` on unsupported claims, no invented standards clauses, specs or safety steps, and a site-procedure field note.
 - The UI discloses the provider and model and requires a confirmation checkbox before any text is sent. The source text isn't logged. Text over 60,000 characters is rejected (not truncated).
 - AI output is always a draft and must pass the same approval checklist as a manual draft.
@@ -107,6 +109,13 @@ specloop/
 - Lessons are study material, not work instructions. Lessons and drafts carry a note that field tasks follow site procedures, permits, isolation/LOTO where applicable, and qualified supervision.
 - Sources require rights and confidentiality confirmations. Uploaded files stay in the browser.
 - Drafts keep their attribution, generation method, date and review status. Only an explicit approval publishes a lesson, and editing an approved draft sends it back to draft.
+
+## Roadmap
+
+1. **Local MVP**: this release.
+2. **Refusal handling**: done. AI refusals are shown to the user and never retried on another model.
+3. **Persistence and auth**: next. Add Supabase Auth, a repository adapter behind the reducer actions, and private Storage buckets. Then verify ownership checks end to end with two real accounts, not only on local Postgres.
+4. **Payments**: later, if at all. Stripe test mode behind `src/lib/billing.ts`, only after auth exists.
 
 ## Known limitations
 

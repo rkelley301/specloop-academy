@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { AiDraftError, generateDraftWithAnthropic } from "@/lib/ai/anthropic";
+import { generateDraftWithAnthropic } from "@/lib/ai/anthropic";
 import { AI_MAX_SOURCE_CHARS } from "@/lib/ai/prompt";
 import { aiConfig } from "@/lib/config";
 
@@ -35,11 +35,18 @@ export async function POST(req: Request) {
     );
   }
   try {
-    const result = await generateDraftWithAnthropic(body, cfg.model);
-    return NextResponse.json(result);
+    const outcome = await generateDraftWithAnthropic(body, cfg.model);
+    if (outcome.kind === "draft") return NextResponse.json({ draft: outcome.draft, model: outcome.model });
+    if (outcome.kind === "refusal") {
+      // Returned to the user unchanged. No retry on another model.
+      return NextResponse.json(
+        { error: "The AI model declined to draft from this source.", refusal: outcome.refusal },
+        { status: 422 },
+      );
+    }
+    return NextResponse.json({ error: outcome.message }, { status: outcome.status });
   } catch (err) {
     // Don't log the source text or the model output; they may be private.
-    if (err instanceof AiDraftError) return NextResponse.json({ error: err.message }, { status: err.status });
     console.error("AI draft failed:", err instanceof Error ? err.name : "unknown error");
     return NextResponse.json({ error: "AI drafting failed unexpectedly." }, { status: 500 });
   }

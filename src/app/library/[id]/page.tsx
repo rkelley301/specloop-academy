@@ -6,6 +6,7 @@ import { useState } from "react";
 import { ReviewStatusBadge } from "@/components/Notes";
 import { EmptyState, WithState } from "@/components/StateViews";
 import { blankDraft, draftFromGenerated, templateDraft } from "@/lib/ai/draft-builders";
+import type { DraftRefusal } from "@/lib/ai/interpret";
 import { AI_MAX_SOURCE_CHARS } from "@/lib/ai/prompt";
 import { blobStorage } from "@/lib/blob-store";
 import { dispatch, newClientId } from "@/lib/store";
@@ -18,6 +19,7 @@ function AiDraftPanel({ state, source, onCreated }: { state: AppState; source: S
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refusal, setRefusal] = useState<DraftRefusal | null>(null);
 
   if (cfg.status === "loading") return <p className="small muted">Checking AI configuration…</p>;
   if (cfg.status === "error" || !cfg.config.ai.enabled) {
@@ -35,6 +37,7 @@ function AiDraftPanel({ state, source, onCreated }: { state: AppState; source: S
   async function run() {
     setBusy(true);
     setError(null);
+    setRefusal(null);
     try {
       const res = await fetch("/api/ai/draft", {
         method: "POST",
@@ -48,7 +51,11 @@ function AiDraftPanel({ state, source, onCreated }: { state: AppState; source: S
           text: source.text,
         }),
       });
-      const body = (await res.json()) as { draft?: GeneratedDraft; model?: string; error?: string };
+      const body = (await res.json()) as { draft?: GeneratedDraft; model?: string; error?: string; refusal?: DraftRefusal };
+      if (body.refusal) {
+        setRefusal(body.refusal);
+        return;
+      }
       if (!res.ok || !body.draft) throw new Error(body.error ?? `Request failed (${res.status}).`);
       const id = newClientId("drf");
       dispatch({ type: "createDraft", id, draft: draftFromGenerated(body.draft, source, body.model ?? "unknown", new Date().toISOString(), newClientId) });
@@ -88,8 +95,26 @@ function AiDraftPanel({ state, source, onCreated }: { state: AppState; source: S
           {error}
         </p>
       )}
+      {refusal && (
+        <div className="notice notice-danger small" role="alert" style={{ marginTop: "0.6rem" }}>
+          <strong>The AI model declined this request</strong>
+          <p>
+            {refusal.explanation ?? "No explanation was given."}
+            {refusal.category && (
+              <>
+                {" "}
+                (category: <code>{refusal.category}</code>, model: <code>{refusal.model}</code>)
+              </>
+            )}
+          </p>
+          <p className="mb-0">
+            SpecLoop doesn&apos;t resend declined requests to a different model. Start from the template and write the
+            draft yourself, or edit the source text if it contains material that shouldn&apos;t be here.
+          </p>
+        </div>
+      )}
       <div className="row" style={{ marginTop: "0.6rem" }}>
-        <button type="button" className="btn btn-primary" disabled={!consent || busy || tooLong} onClick={run}>
+        <button type="button" className="btn btn-primary" disabled={!consent || busy || tooLong || Boolean(refusal)} onClick={run}>
           {busy ? "Generating draft…" : "Send and generate draft"}
         </button>
         <button type="button" className="btn btn-ghost" onClick={() => setOpen(false)} disabled={busy}>
@@ -167,7 +192,7 @@ function SourceView({ state, source }: { state: AppState; source: Source }) {
           </button>
         </div>
         <div style={{ marginTop: "0.75rem" }}>
-          <AiDraftPanel state={state} source={source} onCreated={(id) => router.push(`/drafts/${id}`)} />
+          <AiDraftPanel key={source.updatedAt} state={state} source={source} onCreated={(id) => router.push(`/drafts/${id}`)} />
         </div>
       </section>
 

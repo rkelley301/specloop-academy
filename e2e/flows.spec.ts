@@ -210,3 +210,49 @@ test("layout fits the viewport, keyboard skip link works, and pages pass axe che
   await page.keyboard.press("Enter");
   await expect(page.locator("#main")).toBeFocused();
 });
+
+test("AI refusal is shown to the user and not retried", async ({ page }) => {
+  let draftCalls = 0;
+  await page.route("**/api/config", (r) =>
+    r.fulfill({
+      json: {
+        auth: "local-demo",
+        storage: "local",
+        ai: { enabled: true, provider: "anthropic", model: "claude-opus-5-5" },
+        tts: { onestudioConfigured: false },
+        supabase: { configured: false, wired: false },
+        billing: { enabled: false, plan: "local-demo", message: "Payments aren't enabled in this build." },
+      },
+    }),
+  );
+  await page.route("**/api/ai/draft", (r) => {
+    draftCalls += 1;
+    return r.fulfill({
+      status: 422,
+      json: {
+        error: "The AI model declined to draft from this source.",
+        refusal: { category: "general_harms", explanation: "This request was declined.", model: "claude-opus-5-5" },
+      },
+    });
+  });
+  await onboard(page);
+  await page.goto("/library/new");
+  await page.getByLabel("Title").fill("Notes");
+  await page.getByLabel("Citation").fill("Me, 2026");
+  await page.getByLabel("Source text or excerpts").fill("A paragraph of my own notes on loop checks, long enough to send for drafting.");
+  await page.getByLabel(/I have the right to use this material/).check();
+  await page.getByLabel(/no confidential material/).check();
+  await page.getByRole("button", { name: "Save source" }).click();
+
+  await page.getByRole("button", { name: "Draft with AI…" }).click();
+  await page.getByLabel(/processed by an external provider/).check();
+  await page.getByRole("button", { name: "Send and generate draft" }).click();
+  await expect(page.getByText("The AI model declined this request")).toBeVisible();
+  await expect(page.getByText("This request was declined.")).toBeVisible();
+  await expect(page.getByText("general_harms")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Send and generate draft" })).toBeDisabled();
+  expect(draftCalls).toBe(1);
+  await expect(page).not.toHaveURL(/\/drafts\//);
+  await page.goto("/library");
+  await expect(page.getByText("No drafts yet")).toBeVisible();
+});
